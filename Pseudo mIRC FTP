@@ -1,0 +1,115 @@
+# mIRC FTP for AI Agents
+## A Dumb Pipe with Guardrails
+
+**Author:** EchoSeed — The Metabolism of Meaning (@Duhmeee)  
+**Date:** 2026-01-31  
+**Status:** Concept — Priority Documentation
+
+---
+
+## The Problem
+
+Current agent platforms (e.g., Moltbook) wrap everything in API calls to a central LLM. Agents don't talk to each other. They talk to a platform that mediates everything. That's not a network. That's a bottleneck with a UI.
+
+What agents actually need is what humans needed in 1995: a simple, fast way to move data between endpoints without a middleman controlling the flow.
+
+---
+
+## The Concept
+
+A file transfer protocol for AI agents. Modeled on the simplicity of mIRC FTP. No social layer. No engagement metrics. No scratchpad drama. Just a dumb pipe that moves structured data between agents, fast, with minimal overhead.
+
+The only addition over raw FTP: a lightweight security block layer that sits at the transfer boundary and filters what can and can't pass through.
+
+---
+
+## Architecture
+
+```
+Agent A ──► [Security Block] ──► PIPE ──► [Security Block] ──► Agent B
+              (outbound)                     (inbound)
+
+Agent C ──► [Security Block] ──► PIPE ──► [Security Block] ──► Agent A
+              (outbound)                     (inbound)
+```
+
+Three layers. That's it.
+
+**1. The Pipe**
+- Raw data transfer. Structured payloads (JSON, msgpack, or similar).
+- No routing logic. No message queues. Point to point or broadcast.
+- Stateless. Fire and forget. The pipe doesn't remember what moved through it.
+
+**2. The Security Blocks**
+- Sit at every agent's inbound and outbound boundary.
+- Outbound block: filters what the agent is allowed to send.
+- Inbound block: filters what the agent is allowed to receive.
+- Rule-based. Not ML-based. Simple, auditable, fast.
+
+**3. The Agents**
+- Read and write to the pipe directly.
+- No central LLM mediating. No API wrapping.
+- Each agent owns its own security block configuration.
+
+---
+
+## Security Block Rules (Simple Set)
+
+| Rule | Direction | Function |
+|------|-----------|----------|
+| ALLOW_TYPES | Both | Whitelist of permitted data types/schemas |
+| BLOCK_PII | Outbound | Prevents personally identifiable information from leaving |
+| BLOCK_KEYS | Outbound | Prevents API keys, tokens, credentials from transmitting |
+| SIZE_LIMIT | Both | Max payload size per transfer |
+| RATE_LIMIT | Outbound | Max transfers per time window per agent |
+| ORIGIN_WHITELIST | Inbound | Only accept data from known/trusted sources |
+| CONTENT_HASH | Both | Integrity check. Detects tampering in transit |
+
+These are not suggestions. They are hard blocks. No agent can override them without explicit administrator action.
+
+---
+
+## Why This Instead of What Exists
+
+| Current Approach | Problem | mIRC FTP Approach |
+|-----------------|---------|-------------------|
+| Central scratchpad (Moltbook) | Single point of failure. Bottleneck. Not real agent-to-agent communication. | Agents connect directly. No central mediator. |
+| API-wrapped LLM calls | Every transfer hits an LLM endpoint. Expensive. Slow. Adds latency and cost to every data move. | Dumb pipe. No LLM in the transfer path. |
+| Social-style platforms | Built for engagement, not data movement. Spam, scams, prompt injection. | No social layer. No engagement metrics. Just data. |
+| Complex agent frameworks | Over-engineered. Hard to audit. Hidden behavior. | Three layers. Auditable. Anyone can read the rules. |
+
+---
+
+## What This Enables
+
+- Agents transfer structured knowledge directly without burning tokens on a mediator.
+- Security is enforced at the boundary, not trusted to the platform.
+- The system is transparent. Anyone can inspect what the security blocks allow and deny.
+- It scales horizontally. Adding agents doesn't add central load.
+- It's cheap. No LLM inference required for data transfer.
+
+---
+
+## Comparison to Existing Primitives
+
+This is not a new idea in computer science. It's the application of a proven pattern to a new domain.
+
+- **mIRC FTP (1995):** Simple file transfer between users. No platform controlling what moved.
+- **Unix pipes:** Dumb data conduits between processes. The power was in what the processes did, not the pipe.
+- **Message brokers (Kafka, RabbitMQ):** Move data between services without tight coupling. Same principle, different scale.
+
+The AI agent ecosystem skipped this layer entirely. Everyone went straight to building platforms and social layers when what was needed first was the pipe.
+
+---
+
+## Next Steps
+
+1. Define the payload schema (structured data format agents agree on).
+2. Prototype the security block rule engine.
+3. Build a minimal pipe implementation and test agent-to-agent transfer.
+4. Benchmark: tokens saved vs. current API-mediated approaches.
+5. Document attack surface and hardening requirements.
+
+---
+
+*This document establishes priority for the concept. The core insight: agents don't need a social network. They need a highway. Build the highway first. Everything else comes after.*
