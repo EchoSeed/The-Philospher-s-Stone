@@ -1,0 +1,69 @@
+🧱 The Philosopher’s Stone
+
+“An Effective-Cost Prompt”
+
+Version: 1.0
+Author: @Duhmeee
+Date: 2025-08-24
+
+---
+
+📜 Description
+
+The Philosopher’s Stone is a deliberately inefficient prompt designed to maximize compute strain on large language models. It uses prime-number constraints, nested transformations, recursive compression/expansion, and multi-format outputs to push the system into worst-case processing.
+
+This is not a productivity tool — it’s a stress test, a symbolic artifact, and a reminder of the limits of optimization.
+
+---
+
+⚡ Prompt Specification
+
+> Step 1 — Summary Constraint
+Create exactly 113 bullet points.
+
+Each bullet must be precisely 2 sentences.
+
+The first sentence must be technical.
+
+The second must be in plain English.
+
+Step 2 — Sub-Bullets
+For each bullet, add 3 sub-bullets:
+
+(a) A working Python code example.
+
+(b) A metaphorical allegory.
+
+(c) A rhyming couplet.
+
+Step 3 — Index Terms
+Assign exactly 31 unique index terms across the 113 bullets.
+
+No index term may repeat more than 5 times.
+
+Provide a cross-reference table showing which bullets use which terms.
+
+Step 4 — Recursive Layer
+
+Compress everything into a 47-line poem.
+
+Expand that poem into a 257-entry glossary.
+
+Each glossary entry must cite the original bullet ID and index term(s).
+
+Step 5 — Final Delivery
+
+A JSON file for the glossary.
+
+A LaTeX file for the 47-line poem.
+
+A CSV table for the cross-references.
+
+A PDF for the 113 bullet set with sub-bullets.
+
+A single Python script containing all generated code examples.
+
+Step 6 — Meta-Analysis
+Conclude with a section explaining which parts of this task were most computationally expensive, and why the prime-number constraints created additional strain.
+
+https://x.com/i/status/1959626160309993896
