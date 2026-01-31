@@ -1,0 +1,67 @@
+🔹 The Traveler’s Stone
+
+“A Lightweight Effective-Cost Prompt”
+
+Version: 1.0
+Author: @Duhmeee
+Date: 2025-08-24
+
+---
+
+📜 Description
+
+The Traveler’s Stone is a compact version of The Philosopher’s Stone. It preserves the same design principles — prime-number constraints, recursive compression/expansion, and multi-format output — but uses smaller primes to keep it barely executable.
+
+This makes it suitable for live demonstrations, stress tests on smaller contexts, or symbolic use where the full Philosopher’s Stone would be impractical.
+
+---
+
+⚡ Prompt Specification
+
+> Step 1 — Summary Constraint
+Create exactly 31 bullet points.
+
+Each bullet must be exactly 2 sentences.
+
+The first sentence must be technical.
+
+The second must be in plain English.
+
+Step 2 — Sub-Bullets
+For each bullet, add 2 sub-bullets:
+
+(a) A short Python code snippet.
+
+(b) A rhyming couplet.
+
+Step 3 — Index Terms
+Assign exactly 17 unique index terms across the 31 bullets.
+
+No index term may repeat more than 3 times.
+
+Provide a cross-reference table showing which bullets use which terms.
+
+Step 4 — Recursive Layer
+
+Compress everything into an 11-line poem.
+
+Expand that poem into a 29-entry glossary.
+
+Each glossary entry must cite the original bullet ID and index term(s).
+
+Step 5 — Final Delivery
+
+A JSON file for the glossary.
+
+A LaTeX snippet for the 11-line poem.
+
+A CSV table for the cross-references.
+
+A PDF for the 31 bullet set with sub-bullets.
+
+A single Python script containing all code snippets.
+
+Step 6 — Meta-Analysis
+End with a reflection describing which parts of this task were most computationally expensive, and how prime-number constraints shaped the difficulty.
+
+https://x.com/i/status/1959626490615832884
