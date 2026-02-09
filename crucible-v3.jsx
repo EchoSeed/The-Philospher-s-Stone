@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // ═══════════════════════════════════════════════════════════
-//  THE CRUCIBLE v3 — Full Fusion
+//  THE CRUCIBLE v3 — Full Fusion + Physics Lexicon
 //  EchoSeed v4.2 × Beacon Glyph Engine × Philosopher's Stone
 //  Seasonal Dynamics · Typed Reflexes · Influence Attractors
 //  Helix Core · Singularity Scanner · Dormant Pool Pathing
+//  Tag Operator Eigenvalues · Lexicon Observables · Critical Thresholds
 // ═══════════════════════════════════════════════════════════
 
 // ===== SEASONAL PHASES (from v4.2) =====
@@ -19,6 +20,27 @@ const SEASON_MODIFIERS = {
 
 // ===== REFLEX TYPES (from v4.2) =====
 const ReflexType = { DEFENSIVE: 'defensive', EXPLORATORY: 'exploratory', COLLABORATIVE: 'collaborative', CONSOLIDATIVE: 'consolidative', METAMORPHIC: 'metamorphic' };
+
+// ===== TAG OPERATOR EIGENVALUES (from Physics Lexicon §VII, §XII) =====
+// Ωi|ψ⟩ → λi|ψ'⟩  — thermodynamic multipliers empirically derived over 2000+ generations
+const TAG_EIGENVALUES = {
+  wild:     2.1,   // Acceleration — 2.1× entropy flow
+  ghost:    7.0,   // Autonomy amplification
+  beacon:   1.4,   // Hub formation
+  fractal:  1.8,   // Self-similar branching
+  mirror:   1.3,   // Reflection coupling
+  flex:     1.2,   // Adaptive response
+  resonant: 1.5,   // Resonance amplification
+  unknown:  1.0,   // Identity operator (no effect)
+  stable:   0.85,  // Cooling (consolidation)
+  phase:    0.95,  // Cooling (negative dH/dt)
+  origin:   0.90,  // Reset/collapse
+};
+
+// Protected cognitive markers — influence mass calculation, never compressed away
+const COGNITIVE_TAGS = new Set(['origin', 'self', 'purpose', 'memory', 'mirror', 'beacon', 'synthesis', 'semantic-fusion']);
+const MAX_TAGS_PER_GLYPH = 8;
+const COMPRESS_SIM_THRESHOLD = 0.82; // cosine similarity above this → tags are redundant
 
 // ===== GLYPH CLASS (Crucible base + v4.2 extensions) =====
 class Glyph {
@@ -46,16 +68,22 @@ class Glyph {
     this.isAttractor = false;      // conceptual attractor flag
     this.seasonBorn = null;        // which season it was born in
     this.stagnantCount = 0;        // generations since last interaction
-    // Lattice infection extensions
+    // Lattice entrainment extensions
     this.priority = 0;             // propagation priority
     this.mutationRate = 0.1;       // base mutation rate
     this.stability = 0;            // coherence-derived stability
-    this.infected = false;         // has been infected this cycle
-    this.infectionGen = 0;         // generation of last infection
+    this.entrained = false;        // has been entrained this cycle
+    this.entrainmentGen = 0;       // generation of last entrainment
   }
 
   get entropy() {
     return this.entropyHistory[this.entropyHistory.length - 1] || 0;
+  }
+
+  get mass() {
+    const depth = this.ancestry.length;
+    const cognitive = this.tags.some(t => COGNITIVE_TAGS.has(t)) ? 1.6 : 1.0;
+    return (this.entropy + 300) * (1 + Math.log1p(depth)) * cognitive;
   }
 
   updateThermodynamics(generation) {
@@ -88,11 +116,16 @@ class Glyph {
   resonanceWith(other) {
     if (!this.thermodynamicState || !other.thermodynamicState) return 0;
     const s1 = this.thermodynamicState, s2 = other.thermodynamicState;
-    const entropy_compat = 1.0 / (1 + Math.abs(s1.H - s2.H) / 100);
-    const rate_product = s1.dH_dt * s2.dH_dt;
-    const rate_compat = rate_product < 0 ? Math.min(1.0, Math.abs(rate_product) / 10) : 0.2;
+    // Lexicon §II resonance components — normalization constants scaled for H_max ≈ 8000
+    // ρH = 1/(1 + |Ha-Hb|/κ) where κ scales with entropy range
+    const entropy_compat = 1.0 / (1 + Math.abs(s1.H - s2.H) / 600);
+    // ρv = min(1, max(0, -va·vb/κ²)) — velocity complementarity, clamped to [0,1]
+    const rate_compat = Math.min(1.0, Math.max(0, -(s1.dH_dt * s2.dH_dt) / 5000));
+    // ρφ = cos(Δφ·π) — phase alignment (already normalized)
     const phase_compat = Math.cos(Math.abs(s1.phi_phase - s2.phi_phase) * Math.PI);
+    // ρτ = min(τa,τb)/max(τa,τb) — coherence compatibility (ratio is scale-invariant)
     const tau_ratio = Math.min(s1.tau_coherence, s2.tau_coherence) / Math.max(s1.tau_coherence, s2.tau_coherence);
+    // Lexicon §II: ρ = 0.35·ρH + 0.30·ρv + 0.20·ρφ + 0.15·ρτ
     let base = entropy_compat * 0.35 + rate_compat * 0.30 + phase_compat * 0.20 + tau_ratio * 0.15;
     if (this.isConcept && other.isConcept) base *= 1.15;
     if (this.isConcept !== other.isConcept) base *= 1.08;
@@ -129,9 +162,27 @@ class CrucibleEngine {
     this.baseTags = ['origin','flex','ghost','fractal','wild','mirror','unknown','stable','beacon','phase','resonant'];
     this.evolvedTags = [];
     this.tagSignatures = new Set();
-    this.RESONANCE_THRESHOLD = 0.45;
-    this.BEACON_UPDATE_INTERVAL = 5;
-    this.MAX_GLYPHS = 150;
+    this.RESONANCE_THRESHOLD = 0.45;  // ρc — operational threshold
+    this.PHASE_TRANSITION_THRESHOLD = 0.93;  // ρc* — phase transition
+    this.CRITICAL_POINT_THRESHOLD = 0.997;   // ρc** — critical point
+    // ── Lexicon Observables ──
+    this.observables = {
+      psi: 0,           // ψ — order parameter ⟨ρ⟩
+      vp_mean: 0,       // ⟨vp⟩ — mean thermodynamic velocity
+      J_H: 0,           // J_H — entropy current density
+      f_xi: 0,          // f_Ξ — singularity fraction
+      F_free: 0,        // F — semantic free energy
+      H_mean: 0,        // ⟨H⟩ — mean field entropy
+      sigma_H: 0,       // σ_H — entropy variance
+      N_xi: 0,          // N_Ξ — singularity count
+      phaseTransitions: 0,  // count of ρ > ρc* events
+      criticalEvents: 0,    // count of ρ > ρc** events
+    };
+    this.BEACON_UPDATE_INTERVAL = 8;
+    this.MAX_GLYPHS = 1000;
+    this.RESONANCE_SAMPLE_SIZE = 3000; // stochastic pair samples per update
+    this.RESONANCE_MATRIX_CAP = 200;   // max stored resonant pairs
+    this.RENDER_CONNECTION_CAP = 120;   // max drawn connections
     this.canvasW = 1200;
     this.canvasH = 600;
     this.conceptCount = 0;
@@ -165,6 +216,8 @@ class CrucibleEngine {
     this.dormantPools = [];
     this.activeShortcuts = [];
     this.POOL_SCAN_INTERVAL = 20;
+    this.PRESSURE_THRESHOLD = 1.5e6; // mass threshold triggering synthesis pressure event
+    this.PRESSURE_INTERVAL = 30;     // check every N generations
     this.HBAR_OVER_2 = 0.527;
 
     // ── Meta-Reflex Helix Core ──
@@ -197,7 +250,7 @@ class CrucibleEngine {
     if (!this.baseTags.includes(tag) && !this.evolvedTags.includes(tag)) {
       this.evolvedTags.push(tag);
       this.log(`🧬 New tag evolved: ${tag} (vocab: ${this.tags.length})`, 'evolution');
-      if (this.evolvedTags.length > 100) this.evolvedTags.shift();
+      if (this.evolvedTags.length > 500) this.evolvedTags.shift();
     }
   }
 
@@ -207,13 +260,28 @@ class CrucibleEngine {
   calcEntropy(glyph) {
     const genContrib = Math.min(this.generation, 100) * 10;
     const seasonMod = SEASON_MODIFIERS[this.season]?.entropy || 1.0;
-    const base = (glyph.tags.length * 42 + Math.floor(Math.random() * 58) + genContrib) * seasonMod;
+    // Composite operator: Θ = ∏ Ωi — tag eigenvalues multiply (non-commutative product)
+    let operatorProduct = 1.0;
+    let evolvedCount = 0;
+    for (const tag of glyph.tags) {
+      const clean = tag.replace(/gen:.*|μ.*|c#.*/, '').trim();
+      if (TAG_EIGENVALUES[clean]) {
+        operatorProduct *= TAG_EIGENVALUES[clean];
+      } else if (clean.length > 0) {
+        evolvedCount++;
+      }
+    }
+    // Evolved/mutant tags: diminishing returns (log growth, not exponential)
+    if (evolvedCount > 0) operatorProduct *= 1 + Math.log(1 + evolvedCount) * 0.2;
+    // Cap total operator product to prevent runaway
+    operatorProduct = Math.min(operatorProduct, 12.0);
+    const base = (glyph.tags.length * 42 + Math.floor(Math.random() * 58) + genContrib) * seasonMod * operatorProduct;
     if (glyph.isConcept && glyph.conceptData) {
-      return Math.min(base + (glyph.conceptData.confidence || 0.5) * 200, 1500);
+      return Math.min(base + (glyph.conceptData.confidence || 0.5) * 500, 10000);
     }
     // v4.2: Renaissance-born glyphs get bonus
-    if (glyph.seasonBorn === SeasonalPhase.RENAISSANCE) return Math.min(base * 1.1, 1200);
-    return Math.min(base, 1200);
+    if (glyph.seasonBorn === SeasonalPhase.RENAISSANCE) return Math.min(base * 1.1, 8000);
+    return Math.min(base, 8000);
   }
 
   createGlyph(tags = null, ancestry = []) {
@@ -274,15 +342,23 @@ class CrucibleEngine {
   store(glyph) {
     this.glyphs.set(glyph.id, glyph);
     if (this.glyphs.size > this.MAX_GLYPHS) {
-      const removable = Array.from(this.glyphs.values())
-        .filter(g => !g.isConcept && !g.isAttractor)
-        .sort((a, b) => a.entropy - b.entropy)
-        .slice(0, 30)
-        .map(g => g.id);
-      if (removable.length < 30) {
-        const extra = Array.from(this.glyphs.keys()).slice(0, 30 - removable.length);
-        removable.push(...extra);
+      const excess = this.glyphs.size - this.MAX_GLYPHS;
+      const cullCount = Math.min(excess + 5, 25);
+      // Pre-compute parent reference counts
+      const parentHits = new Map();
+      for (const g of this.glyphs.values()) {
+        for (const aid of g.ancestry) parentHits.set(aid, (parentHits.get(aid) || 0) + 1);
       }
+      const removable = Array.from(this.glyphs.values())
+        .filter(g => !g.isConcept && !g.isAttractor && !g.isReflex)
+        .map(g => {
+          const children = parentHits.get(g.id) || 0;
+          const score = g.entropy * 0.3 + (60 - Math.min(60, g.stagnantCount)) * 20 + children * 500 + g.stability * 1000;
+          return { id: g.id, score };
+        })
+        .sort((a, b) => a.score - b.score)
+        .slice(0, cullCount)
+        .map(g => g.id);
       removable.forEach(id => {
         const dead = this.glyphs.get(id);
         if (dead) this.tagSignatures.delete(this.tagSig(dead.tags));
@@ -294,7 +370,7 @@ class CrucibleEngine {
   collide(parentA, parentB) {
     const childTags = [...new Set([...parentA.tags, ...parentB.tags])];
     const cleaned = childTags.filter(t => !t.startsWith('gen:') && !t.startsWith('μ'));
-    // Effective mutation rate — boosted by infection
+    // Effective mutation rate — boosted by entrainment
     const effectiveMutRate = Math.min(1.0, (parentA.mutationRate + parentB.mutationRate) / 2);
     if (parentA.tags.length >= 2 && parentB.tags.length >= 2) {
       const tA = parentA.tags.filter(t => !t.startsWith('gen:') && !t.startsWith('μ'));
@@ -309,7 +385,7 @@ class CrucibleEngine {
         else mutant = `${a}×${b}`;
         cleaned.push(mutant);
         this.learnTag(mutant);
-        // Extra mutations from elevated mutation rate (infection lineage boost)
+        // Extra mutations from elevated mutation rate (entrainment lineage boost)
         if (effectiveMutRate > 0.2 && Math.random() < effectiveMutRate - 0.1) {
           const a2 = tA[Math.floor(Math.random() * tA.length)];
           const b2 = tB[Math.floor(Math.random() * tB.length)];
@@ -323,9 +399,17 @@ class CrucibleEngine {
     if (isCrossType) cleaned.push('synthesis');
     if (parentA.isConcept && parentB.isConcept) cleaned.push('semantic-fusion');
     cleaned.push(`gen:${this.generation}`);
-    const finalTags = [...new Set(cleaned)];
+    const finalTags = this.compressTags([...new Set(cleaned)]);
 
     const child = this.createGlyph(finalTags, [parentA.id, parentB.id]);
+    // Lexicon §IV: Amplification factor A(ρ) = 1.0 + 0.28(ρ - ρc) for ρ > ρc
+    const collisionRes = parentA.resonanceWith(parentB);
+    if (collisionRes > this.RESONANCE_THRESHOLD) {
+      const A_factor = 1.0 + 0.28 * (collisionRes - this.RESONANCE_THRESHOLD);
+      const parentAvgH = (parentA.entropy + parentB.entropy) / 2;
+      const amplifiedH = Math.min(parentAvgH * A_factor, 10000);
+      child.entropyHistory[child.entropyHistory.length - 1] = amplifiedH;
+    }
     child.x = (parentA.x + parentB.x) / 2 + (Math.random() - 0.5) * 50;
     child.y = (parentA.y + parentB.y) / 2 + (Math.random() - 0.5) * 50;
     if (parentA.isConcept && parentB.isConcept) {
@@ -337,7 +421,7 @@ class CrucibleEngine {
     parentA.stagnantCount = 0;
     parentB.stagnantCount = 0;
     child.stagnantCount = 0;
-    // Inherit infection traits — child gets averaged mutation rate with decay toward baseline
+    // Inherit entrainment traits — child gets averaged mutation rate with decay toward baseline
     child.mutationRate = 0.1 + (effectiveMutRate - 0.1) * 0.7; // 70% inheritance, decays toward 0.1
     child.priority = (parentA.priority + parentB.priority) * 0.3; // 30% priority inheritance
     return child;
@@ -354,27 +438,74 @@ class CrucibleEngine {
 
   updateResonanceField() {
     this.resonanceMatrix.clear();
-    const arr = Array.from(this.glyphs.values());
-    // v4.2: Seasonal resonance threshold adjustment
+    const arr = Array.from(this.glyphs.values()).filter(g => g.thermodynamicState);
+    const n = arr.length;
+    if (n < 2) return;
     const seasonAdj = SEASON_MODIFIERS[this.season]?.resonance || 0;
     const threshold = this.RESONANCE_THRESHOLD + seasonAdj;
-    for (let i = 0; i < arr.length; i++) {
-      for (let j = i + 1; j < arr.length; j++) {
-        const a = arr[i], b = arr[j];
-        if (!a.thermodynamicState || !b.thermodynamicState) continue;
-        const score = a.resonanceWith(b);
-        if (score > threshold) {
-          this.resonanceMatrix.set(`${a.id},${b.id}`, { a, b, score });
+
+    // Spatial grid for proximity-biased sampling
+    const cellSize = 120;
+    const grid = new Map();
+    for (const g of arr) {
+      const key = `${Math.floor(g.x / cellSize)},${Math.floor(g.y / cellSize)}`;
+      if (!grid.has(key)) grid.set(key, []);
+      grid.get(key).push(g);
+    }
+
+    const checked = new Set();
+    const addPair = (a, b) => {
+      const pk = a.id < b.id ? `${a.id},${b.id}` : `${b.id},${a.id}`;
+      if (checked.has(pk)) return;
+      checked.add(pk);
+      const score = a.resonanceWith(b);
+      if (score > threshold) {
+        this.resonanceMatrix.set(pk, { a, b, score });
+      }
+    };
+
+    // Phase 1: Check all neighbors within same + adjacent grid cells (local structure)
+    for (const [key, cell] of grid) {
+      const [cx, cy] = key.split(',').map(Number);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const neighbor = grid.get(`${cx + dx},${cy + dy}`);
+        if (!neighbor) continue;
+        for (const a of cell) for (const b of neighbor) {
+          if (a.id >= b.id) continue;
+          addPair(a, b);
         }
       }
     }
+
+    // Phase 2: Stochastic global sampling (long-range connections)
+    const globalSamples = Math.min(this.RESONANCE_SAMPLE_SIZE, n * (n - 1) / 2);
+    for (let s = 0; s < globalSamples; s++) {
+      const i = Math.floor(Math.random() * n);
+      let j = Math.floor(Math.random() * (n - 1));
+      if (j >= i) j++;
+      addPair(arr[i], arr[j]);
+    }
+
+    // Cap resonance matrix to top pairs by score
+    if (this.resonanceMatrix.size > this.RESONANCE_MATRIX_CAP) {
+      const sorted = Array.from(this.resonanceMatrix.entries()).sort((a, b) => b[1].score - a[1].score);
+      this.resonanceMatrix.clear();
+      for (let i = 0; i < this.RESONANCE_MATRIX_CAP; i++) {
+        this.resonanceMatrix.set(sorted[i][0], sorted[i][1]);
+      }
+    }
+
     for (const [key, expiry] of this.openPipes.entries()) {
       if (this.generation > expiry) this.openPipes.delete(key);
     }
   }
 
   coordinate() {
-    const pairs = Array.from(this.resonanceMatrix.values()).sort((x, y) => y.score - x.score).slice(0, 5);
+    // Mass-weighted priority: resonance × sqrt(combined mass) — deeper lineages collide first
+    const pairs = Array.from(this.resonanceMatrix.values())
+      .map(p => ({ ...p, priority: p.score * Math.sqrt((p.a.mass + p.b.mass) / 2000) }))
+      .sort((x, y) => y.priority - x.priority)
+      .slice(0, 5);
     let collisions = 0;
     for (const { a, b, score } of pairs) {
       const key = `${a.id},${b.id}`, rev = `${b.id},${a.id}`;
@@ -387,6 +518,14 @@ class CrucibleEngine {
       const offspring = this.collide(a, b);
       const typeLabel = a.isConcept && b.isConcept ? '⚗️' : a.isConcept !== b.isConcept ? '🔮' : '◉';
       this.collisionLog.push({ generation: this.generation, parentA: a.id, parentB: b.id, offspring: offspring.id, resonance: score, crossType: a.isConcept !== b.isConcept });
+      // Lexicon §V: Track critical threshold crossings
+      if (score > this.PHASE_TRANSITION_THRESHOLD) {
+        this.observables.phaseTransitions++;
+        if (score > this.CRITICAL_POINT_THRESHOLD) {
+          this.observables.criticalEvents++;
+          this.log(`⚡ CRITICAL POINT: ρ=${score.toFixed(4)} > ρc**=${this.CRITICAL_POINT_THRESHOLD} [${a.id}×${b.id}]`, 'resonance');
+        }
+      }
       a.lastCollisionGen = this.generation;
       b.lastCollisionGen = this.generation;
       collisions++;
@@ -415,7 +554,7 @@ class CrucibleEngine {
   activateDormancyPhase() {
     let dormant = 0;
     for (const g of this.glyphs.values()) {
-      if (g.stagnantCount > 80 && !g.isConcept && !g.isAttractor && g.entropy < 300) {
+      if (g.stagnantCount > 80 && !g.isConcept && !g.isAttractor && g.entropy < 2000) {
         g.tags.push('dormant');
         dormant++;
       }
@@ -521,28 +660,34 @@ class CrucibleEngine {
     if (this.generation % this.INFLUENCE_INTERVAL !== 0) return;
     const arr = Array.from(this.glyphs.values());
 
-    // Calculate influence for each glyph
+    // Pre-build ancestry index: parent → [children] (O(n) instead of O(n²))
+    const childrenOf = new Map();
     for (const g of arr) {
-      const children = arr.filter(c => c.ancestry.includes(g.id));
+      for (const aid of g.ancestry) {
+        if (!childrenOf.has(aid)) childrenOf.set(aid, []);
+        childrenOf.get(aid).push(g);
+      }
+    }
+
+    // Calculate influence using index
+    for (const g of arr) {
+      const children = childrenOf.get(g.id) || [];
       if (children.length === 0) { g.influenceScore = 0; continue; }
       const tagDiversity = new Set(children.flatMap(c => c.tags)).size / Math.max(1, children.length);
       const avgChildEntropy = children.reduce((s, c) => s + c.entropy, 0) / children.length;
-      const cascadeDepth = this.cascadeDepth(g.id, new Set(), 5);
-      // v4.2 multi-dimensional influence
+      const cascadeDepth = this.cascadeDepth(g.id, new Set(), 4, childrenOf);
       g.influenceScore = (
         (children.length / arr.length) * 0.35 +
         (tagDiversity / 10) * 0.25 +
-        (cascadeDepth / 5) * 0.15 +
-        (avgChildEntropy / 1000) * 0.15 +
+        (cascadeDepth / 4) * 0.15 +
+        (avgChildEntropy / 8000) * 0.15 +
         (children.filter(c => c.isConcept !== g.isConcept).length / Math.max(1, children.length)) * 0.10
       );
     }
 
-    // Detect attractors: high influence + frequently in ancestry of top performers
-    const sorted = [...arr].sort((a, b) => b.influenceScore - a.influenceScore);
-    const topIds = new Set(sorted.slice(0, 20).map(g => g.id));
+    // Detect attractors using same ancestry index
     const ancestryCounts = new Map();
-    for (const g of sorted.slice(0, 20)) {
+    for (const g of arr) {
       for (const aid of g.ancestry) {
         ancestryCounts.set(aid, (ancestryCounts.get(aid) || 0) + 1);
       }
@@ -556,18 +701,40 @@ class CrucibleEngine {
             this.conceptualAttractors.set(aid, { discovered: this.generation, episodes: [] });
           }
           this.conceptualAttractors.get(aid).episodes.push(this.generation);
-          this.log(`🌟 Attractor detected: ${aid} (${count} ancestry hits)`, 'attractor');
+          this.log(`🌟 Attractor detected: ${aid} (${count} ancestry hits, alive)`, 'attractor');
+        } else if (!g && count >= this.ATTRACTOR_THRESHOLD + 1) {
+          // Culled progenitor — promote highest-influence living descendant
+          const descendants = childrenOf.get(aid) || [];
+          let bestDescendant = null, bestScore = -1;
+          for (const candidate of descendants) {
+            if (!candidate.isAttractor && candidate.influenceScore > bestScore) {
+              bestScore = candidate.influenceScore;
+              bestDescendant = candidate;
+            }
+          }
+          if (bestDescendant) {
+            bestDescendant.isAttractor = true;
+            if (!this.conceptualAttractors.has(bestDescendant.id)) {
+              this.conceptualAttractors.set(bestDescendant.id, { discovered: this.generation, episodes: [], proxyFor: aid });
+            }
+            this.conceptualAttractors.get(bestDescendant.id).episodes.push(this.generation);
+            this.log(`🌟 Attractor proxy: ${bestDescendant.id} for culled progenitor ${aid} (${count} hits)`, 'attractor');
+          }
         }
       }
     }
   }
 
-  cascadeDepth(id, visited, maxDepth) {
+  cascadeDepth(id, visited, maxDepth, childrenOf = null) {
     if (visited.has(id) || maxDepth <= 0) return 0;
     visited.add(id);
-    const children = Array.from(this.glyphs.values()).filter(g => g.ancestry.includes(id));
+    const children = childrenOf ? (childrenOf.get(id) || []) : Array.from(this.glyphs.values()).filter(g => g.ancestry.includes(id));
     if (children.length === 0) return 1;
-    return 1 + Math.max(...children.map(c => this.cascadeDepth(c.id, new Set(visited), maxDepth - 1)));
+    let maxChild = 0;
+    for (const c of children) {
+      maxChild = Math.max(maxChild, this.cascadeDepth(c.id, visited, maxDepth - 1, childrenOf));
+    }
+    return 1 + maxChild;
   }
 
   // ── TAG VECTORIZATION (character trigram embeddings) ──
@@ -593,15 +760,49 @@ class CrucibleEngine {
     return vec;
   }
 
+  // ── TAG COMPRESSION (ported from MVP) ──
+  // Semantic dedup: merge near-duplicate tags by vector cosine similarity
+  // Preserves cognitive markers, caps at MAX_TAGS_PER_GLYPH
+  compressTags(tags) {
+    if (tags.length <= MAX_TAGS_PER_GLYPH) return tags;
+    const keep = [];
+    // Pass 1: always retain cognitive/structural markers
+    const structural = [];
+    const regular = [];
+    for (const t of tags) {
+      if (COGNITIVE_TAGS.has(t) || t.startsWith('c#') || t.startsWith('gen:')) {
+        structural.push(t);
+      } else {
+        regular.push(t);
+      }
+    }
+    // Pass 2: dedupe regular tags by semantic similarity
+    for (const t of regular) {
+      let redundant = false;
+      const tv = this._tagVec(t);
+      for (const k of keep) {
+        if (this._cosine(tv, this._tagVec(k)) > COMPRESS_SIM_THRESHOLD) {
+          redundant = true;
+          break;
+        }
+      }
+      if (!redundant) keep.push(t);
+    }
+    // Combine: structural first, then deduped regular, cap total
+    const result = [...new Set([...structural, ...keep])];
+    return result.slice(0, MAX_TAGS_PER_GLYPH);
+  }
+
   // ── SEMANTIC DRIFT LOGGER (from v4.2, browser-adapted) ──
   logSemanticMergers() {
     const WINDOW = 200, SIM_THRESHOLD = 0.7;
     if (this.glyphs.size < 20) return null;
-    // Collect tags from recent glyphs
     const arr = Array.from(this.glyphs.values());
     const recent = arr.slice(-Math.min(WINDOW, arr.length));
-    const allTags = [...new Set(recent.flatMap(g => g.tags))];
+    let allTags = [...new Set(recent.flatMap(g => g.tags))];
     if (allTags.length < 2) return null;
+    // Cap tags to prevent O(n²) blowup
+    if (allTags.length > 80) allTags = allTags.sort(() => Math.random() - 0.5).slice(0, 80);
 
     // Vectorize
     const vecs = new Map();
@@ -623,6 +824,69 @@ class CrucibleEngine {
     const top = mergers.slice(0, 5);
     this.log(`🌊 Semantic drift: ${top.length} merger${top.length > 1 ? 's' : ''} detected (top: ${top[0].t1}↔${top[0].t2} ${top[0].sim.toFixed(3)})`, 'analysis');
     return top;
+  }
+
+  // ── LEXICON OBSERVABLES (Physics Lexicon §III, §V, §VIII, §IX, §X) ──
+  computeObservables() {
+    const arr = Array.from(this.glyphs.values());
+    if (arr.length < 5) return;
+
+    // §III: Mean Field Entropy ⟨H⟩ = (1/N) Σ Hi
+    const entropies = arr.map(g => g.entropy);
+    const H_mean = entropies.reduce((a, b) => a + b, 0) / arr.length;
+
+    // §III: Entropy Variance σ_H² = ⟨(H - ⟨H⟩)²⟩
+    const sigma_H = Math.sqrt(entropies.reduce((s, e) => s + (e - H_mean) ** 2, 0) / arr.length);
+
+    // §V: Order Parameter ψ = ⟨ρ⟩ averaged over all resonant pairs
+    let psiSum = 0, psiCount = 0;
+    for (const { score } of this.resonanceMatrix.values()) {
+      psiSum += score;
+      psiCount++;
+    }
+    const psi = psiCount > 0 ? psiSum / psiCount : 0;
+
+    // §I: Mean Thermodynamic Velocity ⟨vp⟩ = ⟨dH/dt⟩ / Cs (Cs ≈ 1)
+    let vpSum = 0, vpCount = 0;
+    for (const g of arr) {
+      if (g.thermodynamicState) {
+        vpSum += Math.abs(g.thermodynamicState.dH_dt);
+        vpCount++;
+      }
+    }
+    const vp_mean = vpCount > 0 ? vpSum / vpCount : 0;
+
+    // §III: Entropy Current Density J_H = Σ_edges (H_source - H_target)/distance
+    let J_H = 0;
+    for (const { a, b } of this.resonanceMatrix.values()) {
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+      J_H += Math.abs(a.entropy - b.entropy) / dist;
+    }
+
+    // §V: Singularity Count N_Ξ — glyphs with no valid thermodynamic state
+    let N_xi = 0;
+    for (const g of arr) {
+      if (!g.thermodynamicState || g.entropy === 0 || !isFinite(g.entropy)) N_xi++;
+    }
+    const f_xi = arr.length > 0 ? N_xi / arr.length : 0;
+
+    // §VIII: Semantic Free Energy F = U - T·S
+    // U ≈ ⟨H⟩ (internal semantic energy), T ≈ σ_H (effective temperature), S ≈ ln(Ω) where Ω = tag config multiplicity
+    const T_eff = sigma_H / 100; // Normalize temperature
+    const S_config = Math.log(Math.max(1, this.tags.length)) + Math.log(Math.max(1, arr.length)); // Configuration entropy
+    const F_free = H_mean - T_eff * S_config;
+
+    Object.assign(this.observables, {
+      psi: +psi.toFixed(4),
+      vp_mean: +vp_mean.toFixed(2),
+      J_H: +J_H.toFixed(2),
+      f_xi: +f_xi.toFixed(4),
+      F_free: +F_free.toFixed(1),
+      H_mean: +H_mean.toFixed(1),
+      sigma_H: +sigma_H.toFixed(1),
+      N_xi,
+    });
   }
 
   // ── DEEP ANALYSIS (from v4.2, browser-adapted) ──
@@ -672,134 +936,116 @@ class CrucibleEngine {
       pools: this.dormantPools.length,
       shortcuts: this.activeShortcuts.length,
       helixStable: this.helix.stable,
+      observables: { ...this.observables },
     };
 
     this.log(`📊 Deep analysis: gen ${this.generation} | ${arr.length} glyphs | ${attractors.length} attractors | ε̄=${avgEntropy.toFixed(0)}`, 'analysis');
   }
 
-  // ── LATTICE INFECTION SYSTEM ──
-  // Rhythm/tempo/echo triggers — driven by thermodynamic state instead of pure random
-  _ambientRhythmMatch(glyph) {
-    // Rhythm match: phase coherence is high (tau > median) — the glyph is "in sync"
-    if (!glyph.thermodynamicState) return Math.random() < 0.3;
-    return glyph.thermodynamicState.tau_coherence > 2.0 && Math.random() < 0.5;
-  }
-  _tempoConflict(glyph) {
-    // Tempo conflict: rate of change is strongly negative — entropy decaying vs environment
-    if (!glyph.thermodynamicState) return Math.random() < 0.4;
-    return glyph.thermodynamicState.dH_dt < -5 && Math.random() < 0.6;
-  }
-  _resonantSync(glyph) {
-    // Resonant sync: phase is near peak AND coherence is high
-    if (!glyph.thermodynamicState) return Math.random() < 0.3;
-    return glyph.thermodynamicState.phi_phase > 0.7 && glyph.thermodynamicState.tau_coherence > 1.5;
-  }
+  // ── RESONANCE ENTRAINMENT SYSTEM ──
+  // Resonance-mediated tag and entropy propagation through the network
+
   _isHighLineage(glyph) {
-    // Dynamic replacement for hardcoded parent IDs — check if parent is an attractor
     return glyph.ancestry.some(pid => this.conceptualAttractors.has(pid));
   }
 
-  infectLattice(target, source) {
-    if (target.id === source.id || target.infected) return;
-    if (Math.random() < 0.5) {
-      const newTags = source.tags.filter(t => !target.tags.includes(t)).slice(0, 3);
-      target.tags = [...target.tags, ...newTags];
+  _entrainmentStrength(source, target, resonance) {
+    // Strength = resonance × entropy gradient (flows downhill) × phase alignment
+    const gradient = Math.max(0, source.entropy - target.entropy) / 8000;
+    const phaseBonus = (source.thermodynamicState && target.thermodynamicState)
+      ? Math.max(0, Math.cos(Math.abs(source.thermodynamicState.phi_phase - target.thermodynamicState.phi_phase) * Math.PI))
+      : 0.5;
+    return resonance * gradient * phaseBonus;
+  }
+
+  propagateEntrainment(target, sources, totalStrength) {
+    if (target.entrained || target.isConcept) return;
+
+    // Tag transfer: weighted by strength, only novel tags, compressed
+    const sourceTagPool = [];
+    for (const { source, strength } of sources) {
+      // Higher strength → more tags transferred from this source
+      const count = Math.ceil(strength * 3);
+      const novel = source.tags.filter(t => !target.tags.includes(t) && !t.startsWith('gen:') && !t.startsWith('μ'));
+      sourceTagPool.push(...novel.slice(0, count));
     }
-    target.entropyHistory.push(target.entropy + source.entropy * 0.1);
-    if (target.tags.includes('rhythm') && this._ambientRhythmMatch(target)) target.priority += 1.0;
-    if (this._isHighLineage(target)) target.mutationRate += 0.2;
-    target.infected = true;
-    target.infectionGen = this.generation;
+    if (sourceTagPool.length > 0) {
+      // Dedupe and limit before compression
+      const unique = [...new Set(sourceTagPool)].slice(0, 4);
+      target.tags = this.compressTags([...target.tags, ...unique]);
+    }
+
+    // Entropy transfer: proportional to total strength (not flat boost)
+    const avgSourceEntropy = sources.reduce((s, x) => s + x.source.entropy, 0) / sources.length;
+    const entropyTransfer = avgSourceEntropy * totalStrength * 0.12;
+    target.entropyHistory.push(target.entropy + entropyTransfer);
+
+    // Mutation rate: small bump only for attractor descendants, capped at 0.6
+    if (this._isHighLineage(target)) {
+      target.mutationRate = Math.min(0.6, target.mutationRate + totalStrength * 0.1);
+    }
+
+    // Priority: based on thermodynamic state, not tag-name matching
+    if (target.thermodynamicState) {
+      if (target.thermodynamicState.tau_coherence > 2.0) target.priority += totalStrength * 0.8;
+      if (target.thermodynamicState.dH_dt < -5) target.priority += totalStrength * 0.5;
+      if (target.thermodynamicState.phi_phase > 0.7 && target.thermodynamicState.tau_coherence > 1.5) target.priority += totalStrength * 0.6;
+    }
+
+    target.entrained = true;
+    target.entrainmentGen = this.generation;
     target.stagnantCount = 0;
   }
 
-  dualInfectLattice(target, src1, src2) {
-    if (target.infected) return;
-    if (Math.random() < 0.5) {
-      const merged = [...new Set([...src1.tags, ...src2.tags])].filter(t => !target.tags.includes(t)).slice(0, 4);
-      target.tags = [...target.tags, ...merged];
-    }
-    target.entropyHistory.push(target.entropy + Math.max(src1.entropy, src2.entropy) * 0.15);
-    if (target.tags.includes('rhythm') && this._ambientRhythmMatch(target)) target.priority += 1.5;
-    if (target.tags.includes('tempo') && this._tempoConflict(target)) target.priority += 1.5;
-    if (this._isHighLineage(target)) target.mutationRate += 0.25;
-    target.infected = true;
-    target.infectionGen = this.generation;
-    target.stagnantCount = 0;
-  }
+  runEntrainmentCycle() {
+    if (this.generation % 10 !== 0) return;
+    if (this.resonanceMatrix.size < 3) return;
 
-  tripleInfectLattice(target, src1, src2, src3) {
-    if (target.infected) return;
-    if (Math.random() < 0.5) {
-      const merged = [...new Set([...src1.tags, ...src2.tags, ...src3.tags])].filter(t => !target.tags.includes(t)).slice(0, 5);
-      target.tags = [...target.tags, ...merged];
+    // Reset entrainment flags
+    for (const g of this.glyphs.values()) g.entrained = false;
+
+    // Build entrainment graph from resonance network
+    // For each resonant pair, the higher-entropy glyph can entrain the lower
+    const entrainmentCandidates = new Map(); // targetId → [{source, strength}]
+
+    for (const { a, b, score } of this.resonanceMatrix.values()) {
+      // Entropy flows downhill through resonance connections
+      const [source, target] = a.entropy >= b.entropy ? [a, b] : [b, a];
+      const strength = this._entrainmentStrength(source, target, score);
+      if (strength < 0.05) continue; // Below threshold — no entrainment
+
+      if (!entrainmentCandidates.has(target.id)) entrainmentCandidates.set(target.id, []);
+      entrainmentCandidates.get(target.id).push({ source, strength });
     }
-    target.entropyHistory.push(target.entropy + Math.max(src1.entropy, src2.entropy, src3.entropy) * 0.15);
-    if (target.tags.includes('echo')) {
-      // Echo stabilization — dampen entropy by 5%
-      const last = target.entropyHistory[target.entropyHistory.length - 1];
-      target.entropyHistory[target.entropyHistory.length - 1] = last * 0.95;
+
+    // Execute entrainment — targets with multiple resonant sources get stronger effects
+    let entrained = 0;
+    for (const [targetId, sources] of entrainmentCandidates) {
+      const target = this.glyphs.get(targetId);
+      if (!target || target.entrained || target.isConcept) continue;
+      const totalStrength = Math.min(1.0, sources.reduce((s, x) => s + x.strength, 0));
+      this.propagateEntrainment(target, sources, totalStrength);
+      entrained++;
     }
-    if (target.tags.includes('rhythm') && this._ambientRhythmMatch(target)) target.priority += 1.5;
-    if (target.tags.includes('tempo') && this._tempoConflict(target)) target.priority += 1.5;
-    if (target.tags.includes('echo') && this._resonantSync(target)) target.priority += 1.5;
-    if (this._isHighLineage(target)) target.mutationRate += 0.25;
-    target.infected = true;
-    target.infectionGen = this.generation;
-    target.stagnantCount = 0;
+
+    // Decay priority and mutation rate toward baseline
+    for (const g of this.glyphs.values()) {
+      g.priority *= 0.95;
+      g.mutationRate = 0.1 + (g.mutationRate - 0.1) * 0.98; // Slow decay toward 0.1
+    }
+
+    if (entrained > 0) this.log(`🌀 Resonance entrainment: ${entrained} glyphs via ${this.resonanceMatrix.size} connections`, 'evolution');
   }
 
   syncCoherence(glyph) {
     // Multi-factor stability: priority contribution + thermodynamic coherence + interaction recency
-    const entropyNorm = glyph.entropy / 500; // normalize to ~0-1 range
+    const entropyNorm = glyph.entropy / 3000; // normalize to ~0-1 range (new scale: max 8000)
     const priorityFactor = glyph.priority * 0.3;
     const tauFactor = glyph.thermodynamicState ? Math.min(1, glyph.thermodynamicState.tau_coherence / 5) * 0.3 : 0;
     const activityFactor = Math.max(0, 1 - glyph.stagnantCount / 60) * 0.2;
-    const entropyStability = (entropyNorm > 0.3 && entropyNorm < 1.5) ? 0.2 : 0; // mid-range entropy = stable
+    const entropyStability = (entropyNorm > 0.3 && entropyNorm < 2.0) ? 0.2 : 0; // mid-range entropy = stable
     const coherence = priorityFactor + tauFactor + activityFactor + entropyStability;
     glyph.stability = Math.min(1.0, Math.max(0, coherence));
-  }
-
-  runInfectionCycle() {
-    if (this.generation % 10 !== 0) return; // Run every 10 gens
-    const arr = Array.from(this.glyphs.values());
-    if (arr.length < 6) return;
-
-    // Reset infection flags
-    for (const g of arr) g.infected = false;
-
-    // Sort by entropy descending — highest entropy glyphs are infection sources
-    const sorted = [...arr].sort((a, b) => b.entropy - a.entropy);
-    const sources = sorted.slice(0, Math.max(3, Math.floor(arr.length * 0.1)));
-    const targets = sorted.slice(Math.floor(arr.length * 0.3));
-
-    let singleCount = 0, dualCount = 0, tripleCount = 0;
-
-    for (const target of targets) {
-      if (target.infected || target.isConcept) continue;
-      // Determine infection mode based on proximity to sources
-      const nearby = sources.filter(s => {
-        const dx = s.x - target.x, dy = s.y - target.y;
-        return Math.sqrt(dx*dx + dy*dy) < 200;
-      });
-
-      if (nearby.length >= 3) {
-        this.tripleInfectLattice(target, nearby[0], nearby[1], nearby[2]);
-        tripleCount++;
-      } else if (nearby.length === 2) {
-        this.dualInfectLattice(target, nearby[0], nearby[1]);
-        dualCount++;
-      } else if (nearby.length === 1) {
-        this.infectLattice(target, nearby[0]);
-        singleCount++;
-      }
-    }
-
-    // Decay priority over time
-    for (const g of arr) g.priority *= 0.95;
-
-    const total = singleCount + dualCount + tripleCount;
-    if (total > 0) this.log(`🦠 Infection cycle: ${singleCount}×single ${dualCount}×dual ${tripleCount}×triple (${total} infected)`, 'evolution');
   }
 
   // ── Meta-Reflex Helix Core Step ──
@@ -869,7 +1115,7 @@ class CrucibleEngine {
   _glyphFeatureVec(glyph) {
     const ts = glyph.thermodynamicState;
     if (!ts) return null;
-    return [ts.H / 1500, ts.dH_dt / 50, Math.min(ts.tau_coherence, 10) / 10, ts.phi_phase, glyph.entropy / 1500, glyph.tags.length / 10, glyph.x / this.canvasW, glyph.y / this.canvasH];
+    return [ts.H / 8000, ts.dH_dt / 50, Math.min(ts.tau_coherence, 10) / 10, ts.phi_phase, glyph.entropy / 8000, glyph.tags.length / 10, glyph.x / this.canvasW, glyph.y / this.canvasH];
   }
   _dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
   _norm(v) { return Math.sqrt(this._dot(v, v)) || 1e-10; }
@@ -887,35 +1133,40 @@ class CrucibleEngine {
   }
   singularityScan() {
     const glyphArr = Array.from(this.glyphs.values());
-    if (glyphArr.length < 10) return;
+    if (glyphArr.length < 20) return;
     const exactIndex = new Map(); const buckets = new Map(); let scanned = 0;
     for (const g of glyphArr) {
       const vec = this._glyphFeatureVec(g); if (!vec) continue; scanned++;
-      const hash = vec.map(v => v.toFixed(4)).join('|');
+      // Coarser hashing — toFixed(3) instead of toFixed(4)
+      const hash = vec.map(v => v.toFixed(3)).join('|');
       if (!exactIndex.has(hash)) exactIndex.set(hash, []); exactIndex.get(hash).push(g);
       const sig = this._signSignature(vec);
       if (!buckets.has(sig)) buckets.set(sig, []); buckets.get(sig).push({ glyph: g, vec });
     }
     let exactCulled = 0, nearCulled = 0;
     for (const [, cluster] of exactIndex.entries()) {
-      if (cluster.length < 2) continue;
+      if (cluster.length < 3) continue; // Tolerate pairs, only cull triples+
       cluster.sort((a, b) => b.entropy - a.entropy);
-      for (let i = 1; i < cluster.length; i++) {
+      for (let i = 2; i < cluster.length; i++) { // Keep top 2 of each cluster
         const v = cluster[i];
-        if (v.isConcept || v.isAttractor) continue;
+        if (v.isConcept || v.isAttractor || v.isReflex) continue;
         this.tagSignatures.delete(this.tagSig(v.tags)); this.glyphs.delete(v.id); exactCulled++;
       }
     }
+    // Near-clone: only check a sample of buckets for performance
+    const bucketArr = Array.from(buckets.entries()).filter(([, e]) => e.length >= 2);
+    const sampleBuckets = bucketArr.length > 50 ? bucketArr.sort(() => Math.random() - 0.5).slice(0, 50) : bucketArr;
     const seenPairs = new Set();
-    for (const [, entries] of buckets.entries()) {
+    for (const [, entries] of sampleBuckets) {
       if (entries.length < 2) continue;
-      for (let i = 0; i < entries.length; i++) for (let j = i + 1; j < entries.length; j++) {
+      const limit = Math.min(entries.length, 20); // cap inner loop
+      for (let i = 0; i < limit; i++) for (let j = i + 1; j < limit; j++) {
         const a = entries[i], b = entries[j];
         const pk = a.glyph.id < b.glyph.id ? `${a.glyph.id},${b.glyph.id}` : `${b.glyph.id},${a.glyph.id}`;
         if (seenPairs.has(pk)) continue; seenPairs.add(pk);
-        if (this._cosine(a.vec, b.vec) >= 0.9995) {
+        if (this._cosine(a.vec, b.vec) >= 0.999) {
           const victim = a.glyph.entropy < b.glyph.entropy ? a.glyph : b.glyph;
-          if (victim.isConcept || victim.isAttractor || !this.glyphs.has(victim.id)) continue;
+          if (victim.isConcept || victim.isAttractor || victim.isReflex || !this.glyphs.has(victim.id)) continue;
           this.tagSignatures.delete(this.tagSig(victim.tags)); this.glyphs.delete(victim.id); nearCulled++;
         }
       }
@@ -929,7 +1180,7 @@ class CrucibleEngine {
     if (!sa || !sb) return null;
     const g = [[sa.phi_phase * sa.tau_coherence, sa.phi_phase * sb.tau_coherence], [sb.phi_phase * sa.tau_coherence, sb.phi_phase * sb.tau_coherence]];
     const dH_a = Math.abs(sa.dH_dt) / 50, dH_b = Math.abs(sb.dH_dt) / 50;
-    const g_prime = [[sa.H / 1500 + dH_a, (sa.H - sb.H) / 3000], [(sb.H - sa.H) / 3000, sb.H / 1500 + dH_b]];
+    const g_prime = [[sa.H / 8000 + dH_a, (sa.H - sb.H) / 16000], [(sb.H - sa.H) / 16000, sb.H / 8000 + dH_b]];
     return { g, g_prime };
   }
   _matMul2x2(a, b) { return [[a[0][0]*b[0][0]+a[0][1]*b[1][0], a[0][0]*b[0][1]+a[0][1]*b[1][1]], [a[1][0]*b[0][0]+a[1][1]*b[1][0], a[1][0]*b[0][1]+a[1][1]*b[1][1]]]; }
@@ -946,17 +1197,24 @@ class CrucibleEngine {
     return pool.nonComm > 0.001 && pool.maxTrace >= this.HBAR_OVER_2;
   }
   detectPools() {
-    const POOL_RADIUS = 150, MIN_POOL = 2, MAX_POOL = 5;
-    const arr = Array.from(this.glyphs.values()).filter(g => g.thermodynamicState);
-    if (arr.length < 4) return;
+    const POOL_RADIUS = 120, MIN_POOL = 3, MAX_POOL = 5;
+    if (this.generation < 50) return; // No pools before system has structure
+    const all = Array.from(this.glyphs.values()).filter(g => g.thermodynamicState);
+    if (all.length < 15) return;
+    const arr = all.length > 200 ? all.sort(() => Math.random() - 0.5).slice(0, 200) : all;
     const assigned = new Set(); const pools = [];
-    for (let i = 0; i < arr.length && pools.length < 8; i++) {
+    for (let i = 0; i < arr.length && pools.length < 6; i++) {
       const seed = arr[i]; if (assigned.has(seed.id)) continue;
       const members = [seed]; assigned.add(seed.id);
       for (let j = 0; j < arr.length && members.length < MAX_POOL; j++) {
         if (i === j || assigned.has(arr[j].id)) continue;
         const dx = seed.x - arr[j].x, dy = seed.y - arr[j].y;
-        if (Math.sqrt(dx*dx + dy*dy) < POOL_RADIUS) { members.push(arr[j]); assigned.add(arr[j].id); }
+        if (dx*dx + dy*dy > POOL_RADIUS * POOL_RADIUS) continue;
+        // Require actual resonance between seed and candidate
+        const res = seed.resonanceWith(arr[j]);
+        if (res > this.RESONANCE_THRESHOLD) {
+          members.push(arr[j]); assigned.add(arr[j].id);
+        }
       }
       if (members.length >= MIN_POOL) {
         const sorted = members.sort((a, b) => b.entropy - a.entropy);
@@ -967,7 +1225,8 @@ class CrucibleEngine {
     this.dormantPools = pools;
   }
   activatePoolShortcuts() {
-    this.activeShortcuts = this.activeShortcuts.filter(s => this.generation < s.expiry);
+    // Shortcuts are permanent once formed — only remove if both endpoints are dead
+    this.activeShortcuts = this.activeShortcuts.filter(s => this.glyphs.has(s.a) || this.glyphs.has(s.b));
     let activated = 0;
     for (const pool of this.dormantPools) {
       if (this._activatePool(pool)) {
@@ -976,12 +1235,16 @@ class CrucibleEngine {
           const a = this.glyphs.get(nodes[i]), b = this.glyphs.get(nodes[j]);
           if (!a || !b) continue;
           if (!this.activeShortcuts.some(s => (s.a === nodes[i] && s.b === nodes[j]) || (s.a === nodes[j] && s.b === nodes[i])))
-            this.activeShortcuts.push({ a: nodes[i], b: nodes[j], weight: 0.5, expiry: this.generation + 30, nonComm: pool.nonComm });
+            this.activeShortcuts.push({ a: nodes[i], b: nodes[j], weight: 0.5, locked: true, formedGen: this.generation, nonComm: pool.nonComm });
         }
         activated++;
       }
     }
-    if (activated > 0) this.log(`🔗 ${activated} pools activated (${this.activeShortcuts.length} shortcuts)`, 'pool');
+    if (activated > 0) this.log(`🔗 ${activated} pools activated (${this.activeShortcuts.length} shortcuts, locked)`, 'pool');
+    // Cap total — keep oldest (most established) if over limit
+    if (this.activeShortcuts.length > 80) {
+      this.activeShortcuts = this.activeShortcuts.slice(0, 80);
+    }
   }
   applyShortcutGravity() {
     for (const sc of this.activeShortcuts) {
@@ -995,6 +1258,31 @@ class CrucibleEngine {
     }
   }
 
+  // ── PRESSURE SYSTEM (ported from MVP) ──
+  // When total mass exceeds threshold, synthesize a purpose anchor and spawn fresh glyphs
+  pressureCheck() {
+    if (this.generation % this.PRESSURE_INTERVAL !== 0) return;
+    const arr = Array.from(this.glyphs.values());
+    const recent = arr.slice(-Math.min(400, arr.length));
+    const totalMass = recent.reduce((s, g) => s + g.mass, 0);
+    if (totalMass <= this.PRESSURE_THRESHOLD) return;
+
+    // Pressure event: synthesize from the tag landscape
+    const tagBag = new Set();
+    for (const g of recent.slice(-100)) for (const t of g.tags) tagBag.add(t);
+    const tags = this.compressTags([...tagBag, 'purpose', 'synthesis']);
+    const anchor = this.createGlyph(tags, [recent[0].id, recent[recent.length - 1].id]);
+    anchor.isConcept = false;
+    this.store(anchor);
+
+    // Spawn a few fresh exploratory glyphs to relieve pressure
+    for (let i = 0; i < 3; i++) {
+      const fresh = this.createGlyph();
+      if (fresh) this.store(fresh);
+    }
+    this.log(`🔥 Pressure event: mass=${Math.round(totalMass)} > threshold=${this.PRESSURE_THRESHOLD} → anchor ${anchor.id} + 3 fresh`, 'pressure');
+  }
+
   // ── Main Step (all systems integrated) ──
   step() {
     this.generation++;
@@ -1004,18 +1292,20 @@ class CrucibleEngine {
     if (this.generation % this.BEACON_UPDATE_INTERVAL === 0) {
       this.updateThermodynamics();
       this.updateResonanceField();
+      this.computeObservables(); // Lexicon observables
     }
     this.coordinate();
     this.reflexCheck(); // v4.2 reflex system
-    this.runInfectionCycle(); // Lattice infection
+    this.runEntrainmentCycle(); // Resonance entrainment
+    this.pressureCheck(); // MVP pressure system
     this.updateInfluenceAndAttractors(); // v4.2 influence
     this.performDeepAnalysis(); // v4.2 deep analysis
-    if (this.generation % 15 === 0) this.singularityScan();
+    if (this.generation % 40 === 0) this.singularityScan();
     if (this.generation % this.POOL_SCAN_INTERVAL === 0) { this.detectPools(); this.activatePoolShortcuts(); }
     this.applyShortcutGravity();
     this.helixStep();
     this.applyHelixModulation();
-    // Sync coherence for ALL glyphs every step (not just infected)
+    // Sync coherence for ALL glyphs every step (not just entrained)
     for (const glyph of this.glyphs.values()) {
       this.syncCoherence(glyph);
       glyph.update(this.canvasW, this.canvasH);
@@ -1024,16 +1314,22 @@ class CrucibleEngine {
   }
 
   getStats() {
-    const arr = Array.from(this.glyphs.values());
-    const concepts = arr.filter(g => g.isConcept).length;
-    const organic = arr.length - concepts;
-    const attractors = arr.filter(g => g.isAttractor).length;
-    const reflexGlyphs = arr.filter(g => g.isReflex).length;
-    const infected = arr.filter(g => g.infected).length;
-    const avgStability = arr.length > 0 ? arr.reduce((s, g) => s + g.stability, 0) / arr.length : 0;
+    let concepts = 0, attractors = 0, reflexGlyphs = 0, entrained = 0, stabilitySum = 0;
+    for (const g of this.glyphs.values()) {
+      if (g.isConcept) concepts++;
+      if (g.isAttractor) attractors++;
+      if (g.isReflex) reflexGlyphs++;
+      if (g.entrained) entrained++;
+      stabilitySum += g.stability;
+    }
+    const total = this.glyphs.size;
+    const organic = total - concepts;
+    const avgStability = total > 0 ? stabilitySum / total : 0;
+    // Cap collision log to last 500 entries to prevent unbounded growth
+    if (this.collisionLog.length > 500) this.collisionLog = this.collisionLog.slice(-500);
     const syntheses = this.collisionLog.filter(c => c.crossType).length;
     const avgRes = this.collisionLog.length > 0 ? this.collisionLog.reduce((s, e) => s + e.resonance, 0) / this.collisionLog.length : 0;
-    return { generation: this.generation, total: arr.length, concepts, organic, attractors, reflexGlyphs, infected, avgStability: +avgStability.toFixed(3), collisions: this.collisionLog.length, syntheses, avgResonance: avgRes, resonantPairs: this.resonanceMatrix.size, openPipes: this.openPipes.size, vocabulary: this.tags.length, pools: this.dormantPools.length, shortcuts: this.activeShortcuts.length, season: this.season, seasonCounter: this.seasonCounter, seasonDuration: this.SEASON_DURATION, lastAnalysis: this.lastAnalysis, helix: { R: this.helix.R, A: this.helix.A, z: this.helix.z, gamma: this.helix.gamma, stable: this.helix.stable, stableFor: this.helix.stableFor, HRV: this.helix.HRV } };
+    return { generation: this.generation, total, concepts, organic, attractors, reflexGlyphs, entrained, avgStability: +avgStability.toFixed(3), collisions: this.collisionLog.length, syntheses, avgResonance: avgRes, resonantPairs: this.resonanceMatrix.size, openPipes: this.openPipes.size, vocabulary: this.tags.length, pools: this.dormantPools.length, shortcuts: this.activeShortcuts.length, season: this.season, seasonCounter: this.seasonCounter, seasonDuration: this.SEASON_DURATION, lastAnalysis: this.lastAnalysis, helix: { R: this.helix.R, A: this.helix.A, z: this.helix.z, gamma: this.helix.gamma, stable: this.helix.stable, stableFor: this.helix.stableFor, HRV: this.helix.HRV }, obs: { ...this.observables } };
   }
 
   reset() {
@@ -1044,8 +1340,10 @@ class CrucibleEngine {
     this.season = SeasonalPhase.EXPLORATION; this.seasonCounter = 0;
     this.conceptualAttractors.clear(); this.lastAnalysis = null;
     this.reflexFreeCount = 0;
+    this.observables = { psi:0, vp_mean:0, J_H:0, f_xi:0, F_free:0, H_mean:0, sigma_H:0, N_xi:0, phaseTransitions:0, criticalEvents:0 };
     Object.assign(this.helix, { t:0, R:0, R_prev:0, A:1.0, theta:0, theta_prev:0, z:0, gamma:0.5, HRV:0, r_sq:0, stable:false, stableFor:0, lastLogGen:-50, history:[], A_history:[], phase_history:[] });
     this.dormantPools = []; this.activeShortcuts = [];
+    this._entropyChartHistory = [];
     for (let i = 0; i < 8; i++) this.store(this.createGlyph());
     this.log('Crucible v3 initialized', 'info');
   }
@@ -1116,15 +1414,33 @@ function renderField(canvas, engine, container) {
     ctx.arc(sw.x * sx, sw.y * sy, sw.radius * Math.min(sx, sy), 0, Math.PI * 2); ctx.stroke();
   }
 
-  // Resonance connections
-  for (const { a, b, score } of engine.resonanceMatrix.values()) {
+  // Resonance connections — capped and batched by type
+  const resPairs = Array.from(engine.resonanceMatrix.values());
+  const renderPairs = resPairs.length > engine.RENDER_CONNECTION_CAP
+    ? resPairs.sort((a, b) => b.score - a.score).slice(0, engine.RENDER_CONNECTION_CAP)
+    : resPairs;
+  // Batch by type to reduce state changes
+  const batches = { concept: [], cross: [], organic: [] };
+  for (const { a, b, score } of renderPairs) {
     const bothC = a.isConcept && b.isConcept;
     const cross = a.isConcept !== b.isConcept;
-    if (bothC) ctx.strokeStyle = `rgba(218,165,32,${score * 0.4})`;
-    else if (cross) ctx.strokeStyle = `rgba(180,200,100,${score * 0.35})`;
-    else ctx.strokeStyle = `rgba(0,170,255,${score * 0.3})`;
-    ctx.lineWidth = bothC ? 1 : 0.5; ctx.beginPath();
-    ctx.moveTo(a.x * sx, a.y * sy); ctx.lineTo(b.x * sx, b.y * sy); ctx.stroke();
+    const type = bothC ? 'concept' : cross ? 'cross' : 'organic';
+    batches[type].push({ a, b, score });
+  }
+  const batchStyles = {
+    concept: { r: 218, g: 165, b: 32, aMul: 0.4, lw: 1 },
+    cross:   { r: 180, g: 200, b: 100, aMul: 0.35, lw: 0.5 },
+    organic: { r: 0,   g: 170, b: 255, aMul: 0.3, lw: 0.5 },
+  };
+  for (const [type, items] of Object.entries(batches)) {
+    if (items.length === 0) continue;
+    const s = batchStyles[type];
+    ctx.lineWidth = s.lw;
+    for (const { a, b, score } of items) {
+      ctx.strokeStyle = `rgba(${s.r},${s.g},${s.b},${score * s.aMul})`;
+      ctx.beginPath();
+      ctx.moveTo(a.x * sx, a.y * sy); ctx.lineTo(b.x * sx, b.y * sy); ctx.stroke();
+    }
   }
 
   // Open pipes
@@ -1144,29 +1460,51 @@ function renderField(canvas, engine, container) {
     ctx.setLineDash([]);
   }
 
-  // Glyphs
+  // Glyphs — fast path for organics, fancy rendering for specials only
   const now = Date.now();
+  // Batch organic glyphs as simple circles (no gradients, no rings)
+  ctx.fillStyle = 'rgba(0,255,0,0.7)';
+  ctx.beginPath();
   for (const glyph of engine.glyphs.values()) {
+    if (glyph.isConcept || glyph.isAttractor || glyph.isReflex) continue;
     const gx = glyph.x * sx, gy = glyph.y * sy;
-    const baseRadius = Math.max(2, Math.min(glyph.isConcept ? 5.5 : glyph.isAttractor ? 5 : 4, Math.sqrt(glyph.entropy) / 6));
+    const radius = Math.max(1.5, Math.min(3.5, Math.sqrt(glyph.entropy) / 18));
+    ctx.moveTo(gx + radius, gy);
+    ctx.arc(gx, gy, radius, 0, Math.PI * 2);
+  }
+  ctx.fill();
+
+  // Entrained organic overlay — batch draw
+  ctx.strokeStyle = 'rgba(255,68,102,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+  ctx.beginPath();
+  for (const glyph of engine.glyphs.values()) {
+    if (glyph.isConcept || glyph.isAttractor || glyph.isReflex || !glyph.entrained) continue;
+    const gx = glyph.x * sx, gy = glyph.y * sy;
+    ctx.moveTo(gx + 5, gy);
+    ctx.arc(gx, gy, 5, 0, Math.PI * 2);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Special glyphs — full rendering with gradients (concepts, attractors, reflexes only)
+  for (const glyph of engine.glyphs.values()) {
+    if (!glyph.isConcept && !glyph.isAttractor && !glyph.isReflex) continue;
+    const gx = glyph.x * sx, gy = glyph.y * sy;
+    const baseRadius = Math.max(2, Math.min(glyph.isConcept ? 5.5 : glyph.isAttractor ? 5 : 4, Math.sqrt(glyph.entropy) / 15));
     const pulse = 1 + Math.sin(glyph.pulsePhase) * 0.1;
     const radius = baseRadius * pulse;
     const age = (now - glyph.birthTime) / 1000;
     const fadeIn = Math.min(1, age / 0.5);
 
     if (glyph.isConcept) {
-      // Gold concept glyph (diamond)
       const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius * 2.2);
       grad.addColorStop(0, `rgba(218,165,32,${0.6 * fadeIn})`); grad.addColorStop(0.5, `rgba(218,165,32,${0.12 * fadeIn})`); grad.addColorStop(1, 'rgba(218,165,32,0)');
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(gx, gy, radius * 2.2, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = `rgba(218,165,32,${fadeIn})`; ctx.save(); ctx.translate(gx, gy); ctx.rotate(Math.PI / 4);
       ctx.fillRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4); ctx.restore();
     } else if (glyph.isAttractor) {
-      // v4.2: Attractor glyphs — pulsing red/orange star
       const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius * 2.5);
       grad.addColorStop(0, `rgba(255,107,107,${0.6 * fadeIn})`); grad.addColorStop(0.5, `rgba(255,107,107,${0.15 * fadeIn})`); grad.addColorStop(1, 'rgba(255,107,107,0)');
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(gx, gy, radius * 2.5, 0, Math.PI * 2); ctx.fill();
-      // Star shape
       ctx.fillStyle = `rgba(255,107,107,${fadeIn})`; ctx.beginPath();
       for (let i = 0; i < 6; i++) {
         const a2 = (i * Math.PI / 3) + glyph.pulsePhase * 0.3;
@@ -1176,38 +1514,19 @@ function renderField(canvas, engine, container) {
       }
       ctx.closePath(); ctx.fill();
     } else if (glyph.isReflex) {
-      // v4.2: Reflex glyphs — cyan triangle
       const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius * 2);
       grad.addColorStop(0, `rgba(0,255,204,${0.4 * fadeIn})`); grad.addColorStop(1, 'rgba(0,255,204,0)');
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(gx, gy, radius * 2, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = `rgba(0,255,204,${fadeIn})`; ctx.beginPath();
       ctx.moveTo(gx, gy - radius * 1.2); ctx.lineTo(gx - radius, gy + radius * 0.6); ctx.lineTo(gx + radius, gy + radius * 0.6);
       ctx.closePath(); ctx.fill();
-    } else {
-      // Organic glyph (circle)
-      const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius * 2);
-      grad.addColorStop(0, `rgba(0,255,0,${0.4 * fadeIn})`); grad.addColorStop(0.5, `rgba(0,255,0,${0.08 * fadeIn})`); grad.addColorStop(1, 'rgba(0,255,0,0)');
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(gx, gy, radius * 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = `rgba(0,255,0,${fadeIn})`; ctx.beginPath(); ctx.arc(gx, gy, radius, 0, Math.PI * 2); ctx.fill();
     }
-
-    // Phase ring
+    // Phase ring for special glyphs only
     if (glyph.thermodynamicState) {
       const phase = glyph.thermodynamicState.phi_phase;
       const hue = glyph.isConcept ? 30 + phase * 30 : glyph.isAttractor ? 0 + phase * 30 : phase * 120;
       ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${0.6 * fadeIn})`; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(gx, gy, radius + 3, 0, Math.PI * 2); ctx.stroke();
-    }
-    // Infection indicator — pulsing red outer ring
-    if (glyph.infected) {
-      const infPulse = 0.5 + Math.sin(now * 0.008 + glyph.id) * 0.3;
-      ctx.strokeStyle = `rgba(255,68,102,${infPulse * fadeIn})`; ctx.lineWidth = 1.5;
-      ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.arc(gx, gy, radius + 6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-    }
-    // Stability aura — green ring when stability > 0.5
-    if (glyph.stability > 0.5) {
-      ctx.strokeStyle = `rgba(180,200,100,${glyph.stability * 0.4 * fadeIn})`; ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.arc(gx, gy, radius + 9, 0, Math.PI * 2); ctx.stroke();
     }
   }
 
@@ -1220,7 +1539,7 @@ function renderField(canvas, engine, container) {
     { type: 'glyph', color: '#ff6b6b', shape: 'star', label: 'Attractor' },
     { type: 'glyph', color: '#00ffcc', shape: 'triangle', label: 'Reflex' },
     // Rings
-    { type: 'ring', color: '#ff4466', dash: true, label: 'Infected' },
+    { type: 'ring', color: '#ff4466', dash: true, label: 'Entrained' },
     { type: 'ring', color: '#b4c864', dash: false, label: 'Stable' },
     { type: 'ring', color: '#ff8800', dash: false, label: 'Phase' },
     // Lines
@@ -1290,19 +1609,75 @@ function renderChart(canvas, engine, container, mode) {
   const pad = { t: 28, b: 30, l: 48, r: 16 }, pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
 
   if (mode === 'entropy') {
-    const organicE = [], conceptE = [];
-    for (const g of engine.glyphs.values()) { for (const e of g.entropyHistory) { if (g.isConcept) conceptE.push(e); else organicE.push(e); } }
-    const all = [...organicE, ...conceptE];
+    // Compute per-glyph current entropy as a distribution, plus rolling mean history
+    const organic = [], concept = [];
+    for (const g of engine.glyphs.values()) {
+      if (g.isConcept) concept.push(g.entropy); else organic.push(g.entropy);
+    }
+    const all = [...organic, ...concept];
     if (all.length < 2) { ctx.fillStyle = '#2a8a8a'; ctx.font = '11px monospace'; ctx.textAlign = 'center'; ctx.fillText('Accumulating entropy data...', w/2, h/2); return; }
-    const min = Math.min(...all), max = Math.max(...all), range = max - min || 1;
+
+    // Use observables history if available, else build from current snapshot
+    // Build rolling mean from the last 200 generations of observable H_mean
+    const histLen = engine._entropyChartHistory ? engine._entropyChartHistory.length : 0;
+    if (!engine._entropyChartHistory) engine._entropyChartHistory = [];
+    const orgMean = organic.length > 0 ? organic.reduce((a,b) => a+b, 0) / organic.length : 0;
+    const conMean = concept.length > 0 ? concept.reduce((a,b) => a+b, 0) / concept.length : 0;
+    const orgMin = organic.length > 0 ? Math.min(...organic) : 0;
+    const orgMax = organic.length > 0 ? Math.max(...organic) : 0;
+    // Only push one sample per render to avoid duplication
+    if (engine._entropyChartHistory.length === 0 || engine._entropyChartHistory[engine._entropyChartHistory.length - 1].gen !== engine.generation) {
+      engine._entropyChartHistory.push({ gen: engine.generation, orgMean, conMean, orgMin, orgMax });
+      if (engine._entropyChartHistory.length > 300) engine._entropyChartHistory.shift();
+    }
+    const hist = engine._entropyChartHistory;
+    if (hist.length < 2) return;
+
+    // Y range from history
+    let yMin = Infinity, yMax = -Infinity;
+    for (const h of hist) { yMin = Math.min(yMin, h.orgMin, h.conMean); yMax = Math.max(yMax, h.orgMax, h.conMean); }
+    yMin = Math.max(0, yMin - 100); yMax = yMax + 100;
+    const yRange = yMax - yMin || 1;
+
+    // Grid
     ctx.strokeStyle = '#151510'; ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 4; i++) { const y = pad.t + (ph/4)*i; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w-pad.r, y); ctx.stroke(); ctx.fillStyle = '#2a8a8a'; ctx.font = '8px monospace'; ctx.textAlign = 'right'; ctx.fillText(Math.round(max - (range/4)*i), pad.l - 4, y + 3); }
-    if (organicE.length > 1) { ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 1.2; ctx.beginPath(); organicE.forEach((e, i) => { const x = pad.l + (i / (organicE.length - 1)) * pw; const y = pad.t + ph - ((e - min) / range) * ph; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }); ctx.stroke(); }
-    if (conceptE.length > 1) { ctx.strokeStyle = '#daa520'; ctx.lineWidth = 1.2; ctx.beginPath(); conceptE.forEach((e, i) => { const x = pad.l + (i / (conceptE.length - 1)) * pw; const y = pad.t + ph - ((e - min) / range) * ph; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }); ctx.stroke(); }
+    for (let i = 0; i <= 4; i++) { const y = pad.t + (ph/4)*i; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w-pad.r, y); ctx.stroke(); ctx.fillStyle = '#2a8a8a'; ctx.font = '8px monospace'; ctx.textAlign = 'right'; ctx.fillText(Math.round(yMax - (yRange/4)*i), pad.l - 4, y + 3); }
+
+    // Organic range band (min-max fill)
+    ctx.fillStyle = 'rgba(0,255,0,0.08)';
+    ctx.beginPath();
+    hist.forEach((h, i) => { const x = pad.l + (i / (hist.length - 1)) * pw; const y = pad.t + ph - ((h.orgMax - yMin) / yRange) * ph; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    for (let i = hist.length - 1; i >= 0; i--) { const x = pad.l + (i / (hist.length - 1)) * pw; const y = pad.t + ph - ((hist[i].orgMin - yMin) / yRange) * ph; ctx.lineTo(x, y); }
+    ctx.closePath(); ctx.fill();
+
+    // Organic mean line
+    ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 1.5; ctx.beginPath();
+    hist.forEach((h, i) => { const x = pad.l + (i / (hist.length - 1)) * pw; const y = pad.t + ph - ((h.orgMean - yMin) / yRange) * ph; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.stroke();
+
+    // Concept mean line
+    if (concept.length > 0) {
+      ctx.strokeStyle = '#daa520'; ctx.lineWidth = 1.5; ctx.beginPath();
+      hist.forEach((h, i) => { const x = pad.l + (i / (hist.length - 1)) * pw; const y = pad.t + ph - ((h.conMean - yMin) / yRange) * ph; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke();
+    }
+
+    // ⟨H⟩_critical = 5200 threshold
+    if (5200 >= yMin && 5200 <= yMax) {
+      const critY = pad.t + ph - ((5200 - yMin) / yRange) * ph;
+      ctx.strokeStyle = '#ff6b6b55'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(pad.l, critY); ctx.lineTo(w-pad.r, critY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#ff6b6b88'; ctx.font = '7px monospace'; ctx.textAlign = 'left'; ctx.fillText('⟨H⟩crit=5200', pad.l + 2, critY - 3);
+    }
+
+    // X-axis gen labels
+    const genStart = hist[0].gen, genEnd = hist[hist.length - 1].gen;
+    ctx.fillStyle = '#2a8a8a'; ctx.font = '7px monospace'; ctx.textAlign = 'center';
+    for (let i = 0; i <= 4; i++) { const x = pad.l + (i / 4) * pw; ctx.fillText(Math.round(genStart + (genEnd - genStart) * (i / 4)), x, h - pad.b + 12); }
+
     ctx.font = '9px monospace'; ctx.textAlign = 'right';
-    ctx.fillStyle = '#00ff00'; ctx.fillText('— organic', w - 12, 16);
-    ctx.fillStyle = '#daa520'; ctx.fillText('— concept', w - 12, 28);
-    ctx.fillStyle = '#3aaa9a'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText('Entropy · Organic vs Concept', w/2, 16);
+    ctx.fillStyle = '#00ff00'; ctx.fillText('— organic (mean ± range)', w - 12, 16);
+    ctx.fillStyle = '#daa520'; ctx.fillText('— concept (mean)', w - 12, 28);
+    ctx.fillStyle = '#3aaa9a'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText(`Entropy · gen ${genStart}–${genEnd}`, w/2, 16);
   }
 
   if (mode === 'resonance') {
@@ -1314,6 +1689,19 @@ function renderChart(canvas, engine, container, mode) {
     for (let i = 0; i <= 4; i++) { const y = pad.t + (ph/4)*i; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w-pad.r, y); ctx.stroke(); ctx.fillStyle = '#2a8a8a'; ctx.font = '8px monospace'; ctx.textAlign = 'right'; ctx.fillText((max - (range/4)*i).toFixed(2), pad.l - 4, y + 3); }
     const threshY = pad.t + ph - ((engine.RESONANCE_THRESHOLD - min) / range) * ph;
     ctx.strokeStyle = '#ff444466'; ctx.lineWidth = 1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(pad.l, threshY); ctx.lineTo(w-pad.r, threshY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ff444466'; ctx.font = '7px monospace'; ctx.textAlign = 'left'; ctx.fillText(`ρc=${engine.RESONANCE_THRESHOLD}`, pad.l + 2, threshY - 3);
+    // Phase transition threshold ρc*
+    if (engine.PHASE_TRANSITION_THRESHOLD >= min && engine.PHASE_TRANSITION_THRESHOLD <= max) {
+      const ptY = pad.t + ph - ((engine.PHASE_TRANSITION_THRESHOLD - min) / range) * ph;
+      ctx.strokeStyle = '#daa52066'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(pad.l, ptY); ctx.lineTo(w-pad.r, ptY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#daa52088'; ctx.font = '7px monospace'; ctx.fillText('ρc*=0.93', pad.l + 2, ptY - 3);
+    }
+    // Critical point threshold ρc**
+    if (engine.CRITICAL_POINT_THRESHOLD >= min && engine.CRITICAL_POINT_THRESHOLD <= max) {
+      const cpY = pad.t + ph - ((engine.CRITICAL_POINT_THRESHOLD - min) / range) * ph;
+      ctx.strokeStyle = '#ff6b6b66'; ctx.lineWidth = 1; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(pad.l, cpY); ctx.lineTo(w-pad.r, cpY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#ff6b6b88'; ctx.font = '7px monospace'; ctx.fillText('ρc**=0.997', pad.l + 2, cpY - 3);
+    }
     log.forEach((entry, i) => {
       const x = pad.l + (i / (vals.length - 1)) * pw, y = pad.t + ph - ((entry.resonance - min) / range) * ph;
       const color = entry.crossType ? '#daa520' : '#00aaff';
@@ -1437,7 +1825,7 @@ const TheCrucible = () => {
   const animRef = useRef(null);
   const [initialized, setInitialized] = useState(false);
   const [running, setRunning] = useState(false);
-  const [stats, setStats] = useState({ generation:0, total:0, concepts:0, organic:0, attractors:0, reflexGlyphs:0, infected:0, avgStability:0, collisions:0, syntheses:0, avgResonance:0, resonantPairs:0, openPipes:0, vocabulary:11, pools:0, shortcuts:0, season:SeasonalPhase.EXPLORATION, seasonCounter:0, seasonDuration:200, helix:{ R:0, A:1, z:0, gamma:0.5, stable:false, stableFor:0, HRV:0 } });
+  const [stats, setStats] = useState({ generation:0, total:0, concepts:0, organic:0, attractors:0, reflexGlyphs:0, entrained:0, avgStability:0, collisions:0, syntheses:0, avgResonance:0, resonantPairs:0, openPipes:0, vocabulary:11, pools:0, shortcuts:0, season:SeasonalPhase.EXPLORATION, seasonCounter:0, seasonDuration:200, helix:{ R:0, A:1, z:0, gamma:0.5, stable:false, stableFor:0, HRV:0 }, obs:{ psi:0, vp_mean:0, J_H:0, f_xi:0, F_free:0, H_mean:0, sigma_H:0, N_xi:0, phaseTransitions:0, criticalEvents:0 } });
   const [view, setView] = useState('field');
   const [logs, setLogs] = useState([]);
   const [input, setInput] = useState('');
@@ -1480,6 +1868,7 @@ const TheCrucible = () => {
     else if (view === 'helix') renderHelix(canvas, engine, container);
     else if (view === 'attractors') { /* HTML panel, no canvas */ const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const w = container.clientWidth, h = container.clientHeight; canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr); ctx.fillStyle = '#0a0908'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#2a8a8a'; ctx.font = '11px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Attractor tracking below', w/2, h/2); }
     else if (view === 'reflexes') { const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const w = container.clientWidth, h = container.clientHeight; canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr); ctx.fillStyle = '#0a0908'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#2a8a8a'; ctx.font = '11px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Reflex tracking below', w/2, h/2); }
+    else if (view === 'vocab') { const ctx = canvas.getContext('2d'); const dpr = window.devicePixelRatio || 1; const w = container.clientWidth, hh = container.clientHeight; canvas.width = w * dpr; canvas.height = hh * dpr; canvas.style.width = w + 'px'; canvas.style.height = hh + 'px'; ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr); ctx.fillStyle = '#0a0908'; ctx.fillRect(0, 0, w, hh); ctx.fillStyle = '#2a8a8a'; ctx.font = '11px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Vocabulary list below', w/2, hh/2); }
     else renderChart(canvas, engine, container, view);
     animRef.current = requestAnimationFrame(doRender);
   }, [view]);
@@ -1548,7 +1937,7 @@ const TheCrucible = () => {
           {S('CONCEPT', stats.concepts, '#daa520')}
           {S('ATTRACTOR', stats.attractors, '#ff6b6b')}
           {S('REFLEX', stats.reflexGlyphs, '#00ffcc')}
-          {S('INFECTED', stats.infected, '#ff4466')}
+          {S('ENTRAINED', stats.entrained, '#ff4466')}
           {S('STABILITY', stats.avgStability, '#b4c864')}
           {S('COLLISIONS', stats.collisions, '#ff8800')}
         </div>
@@ -1560,23 +1949,39 @@ const TheCrucible = () => {
           {S('VOCAB', stats.vocabulary, '#5acebe')}
           {S('HELIX', stats.helix.stable ? `✦ ${stats.helix.stableFor}` : '◎', stats.helix.stable ? '#00ffcc' : '#ff8800')}
         </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:2, marginTop:2, borderTop:'1px solid #1a1810', paddingTop:2 }}>
+          {S('ψ ORDER', stats.obs.psi, stats.obs.psi > 0.93 ? '#ff6b6b' : stats.obs.psi > 0.76 ? '#daa520' : '#3aaa9a')}
+          {S('⟨H⟩', stats.obs.H_mean, stats.obs.H_mean > 5200 ? '#ff6b6b' : '#00aaff')}
+          {S('vₚ', stats.obs.vp_mean, stats.obs.vp_mean > 42 ? '#ff6b6b' : '#5acebe')}
+          {S('F FREE', stats.obs.F_free, '#b464ff')}
+          {S('J_H', stats.obs.J_H, '#ff8800')}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:2, marginTop:1 }}>
+          {S('σ_H', stats.obs.sigma_H, '#7ae6d6')}
+          {S('Ξ', stats.obs.f_xi > 0 ? `${stats.obs.N_xi} (${stats.obs.f_xi})` : '✓', stats.obs.f_xi > 0.01 ? '#ff4466' : '#3aaa9a')}
+          {S('ρ>ρc*', stats.obs.phaseTransitions, '#daa520')}
+          {S('ρ>ρc**', stats.obs.criticalEvents, stats.obs.criticalEvents > 0 ? '#ff6b6b' : '#3aaa9a')}
+        </div>
       </div>
 
       {/* ─── CONTROLS ─── */}
-      <div style={{ display:'flex', gap:3, padding:'6px 10px', flexWrap:'wrap', borderBottom:'1px solid #111' }}>
-        <Btn onClick={() => setRunning(!running)} style={{ color: running ? '#ff4444' : '#00ff00' }}>{running ? '⏸ STOP' : '▶ START'}</Btn>
+      <div style={{ display:'flex', gap:3, padding:'6px 10px', flexWrap:'nowrap', borderBottom:'1px solid #111' }}>
+        <Btn onClick={() => setRunning(!running)} style={{ color: running ? '#ff4444' : '#00ff00' }}>{running ? '⏸' : '▶'}</Btn>
 
-        <Btn onClick={doReset}>↺ RESET</Btn>
-        <Btn onClick={doAnalyze} disabled={analysisLoading}>{analysisLoading ? '⟳' : '🧠'} ANALYZE</Btn>
+        <Btn onClick={doReset}>↺</Btn>
+        <Btn onClick={doAnalyze} disabled={analysisLoading}>{analysisLoading ? '⟳' : '🧠'}</Btn>
         <div style={{ flex:1 }} />
-        {['field','entropy','resonance','helix','attractors','reflexes'].map(v => (
-          <Btn key={v} onClick={() => setView(v)} style={{ color: view === v ? '#daa520' : '#555', borderColor: view === v ? '#daa520' : '#1a1810' }}>{v === 'attractors' ? '◉ ATTR' : v === 'reflexes' ? '⚡ RFX' : v.toUpperCase()}</Btn>
-        ))}
-        <Btn onClick={() => setShowPipeline(!showPipeline)} style={{ color: showPipeline ? '#daa520' : '#555' }}>⚗️ PIPELINE</Btn>
+        <div style={{ display:'flex', gap:2, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+        {['field','entropy','resonance','vocab','helix','attractors','reflexes'].map(v => {
+          const labels = { field:'FLD', entropy:'ENT', resonance:'RES', vocab:'VOC', helix:'HLX', attractors:'ATR', reflexes:'RFX' };
+          return <Btn key={v} onClick={() => setView(v)} style={{ color: view === v ? '#daa520' : '#555', borderColor: view === v ? '#daa520' : '#1a1810', whiteSpace:'nowrap', padding:'6px 4px' }}>{labels[v]}</Btn>;
+        })}
+        </div>
+        <Btn onClick={() => setShowPipeline(!showPipeline)} style={{ color: showPipeline ? '#daa520' : '#555' }}>⚗️</Btn>
       </div>
 
       {/* ─── CANVAS ─── */}
-      <div ref={containerRef} style={{ height: view === 'helix' ? 360 : (view === 'attractors' || view === 'reflexes') ? 80 : 280, position:'relative', transition:'height 0.2s' }}>
+      <div ref={containerRef} style={{ height: view === 'helix' ? 360 : (view === 'attractors' || view === 'reflexes' || view === 'vocab') ? 80 : 280, position:'relative', transition:'height 0.2s' }}>
         <canvas ref={canvasRef} style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%' }} />
       </div>
 
@@ -1626,7 +2031,7 @@ const TheCrucible = () => {
                   </div>
                   {meta && (
                     <div style={{ fontSize:8, color:'#555', marginTop:3, fontFamily:'monospace' }}>
-                      discovered gen {meta.discovered} | episodes: {meta.episodes.length} ({meta.episodes.slice(-3).join(', ')}{meta.episodes.length > 3 ? '...' : ''})
+                      discovered gen {meta.discovered} | episodes: {meta.episodes.length} ({meta.episodes.slice(-3).join(', ')}{meta.episodes.length > 3 ? '...' : ''}){meta.proxyFor ? ` | proxy for culled #${meta.proxyFor}` : ''}
                     </div>
                   )}
                   {g.thermodynamicState && (
@@ -1721,6 +2126,48 @@ const TheCrucible = () => {
         );
       })()}
 
+      {view === 'vocab' && (() => {
+        const engine = engineRef.current;
+        if (!engine) return null;
+        const base = engine.tags.filter(t => !engine.evolvedTags.includes(t));
+        const evolved = engine.evolvedTags;
+        // Count how many living glyphs carry each evolved tag
+        const freq = new Map();
+        for (const g of engine.glyphs.values()) {
+          for (const t of g.tags) {
+            if (evolved.includes(t)) freq.set(t, (freq.get(t) || 0) + 1);
+          }
+        }
+        return (
+          <div style={{ margin:'0 10px', padding:10, background:'#0f0e0b', border:'1px solid rgba(90,206,190,0.15)', borderRadius:4, maxHeight:'55vh', overflow:'auto', WebkitOverflowScrolling:'touch' }}>
+            <div style={{ fontSize:9, color:'#5acebe', letterSpacing:'0.12em', fontWeight:'bold', marginBottom:6 }}>
+              VOCABULARY — {engine.tags.length} total · {base.length} base · {evolved.length} evolved
+            </div>
+            {evolved.length === 0 && (
+              <div style={{ fontSize:10, color:'#2a8a8a', padding:'12px 0', textAlign:'center' }}>
+                No evolved tags yet. They emerge from collisions.
+              </div>
+            )}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+              {evolved.map((t, i) => {
+                const count = freq.get(t) || 0;
+                const alive = count > 0;
+                return (
+                  <span key={i} style={{
+                    display:'inline-block', padding:'2px 5px', fontSize:8, fontFamily:'monospace',
+                    background: alive ? 'rgba(90,206,190,0.1)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${alive ? 'rgba(90,206,190,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius:2, color: alive ? '#7ae6d6' : '#444',
+                  }}>
+                    {t}{alive && <span style={{ color:'#ff8844', marginLeft:3 }}>×{count}</span>}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── ANALYSIS PANEL ─── */}
       {analysisResult && (
         <div style={{ margin:'0 10px', padding:10, background:'#0f0e0b', border:'1px solid rgba(0,170,255,0.15)', borderRadius:4, maxHeight:200, overflow:'auto' }}>
@@ -1765,6 +2212,11 @@ const TheCrucible = () => {
           <div style={{ fontSize:10, color:'#c8b898', marginBottom:4 }}>
             Collision rate: {stats.lastAnalysis.collisionRate}/gen | Evolved vocab: {stats.lastAnalysis.evolvedVocab} | Pools: {stats.lastAnalysis.pools} | Helix: {stats.lastAnalysis.helixStable ? '✓ stable' : '○ unstable'}
           </div>
+          {stats.lastAnalysis.observables && (
+            <div style={{ fontSize:9, color:'#b464ff', marginBottom:4, padding:'4px 6px', background:'rgba(180,100,255,0.04)', borderRadius:3, borderLeft:'2px solid rgba(180,100,255,0.2)', fontFamily:'monospace' }}>
+              ψ={stats.lastAnalysis.observables.psi} | ⟨H⟩={stats.lastAnalysis.observables.H_mean} | vₚ={stats.lastAnalysis.observables.vp_mean} | σ_H={stats.lastAnalysis.observables.sigma_H} | F={stats.lastAnalysis.observables.F_free} | J_H={stats.lastAnalysis.observables.J_H} | f_Ξ={stats.lastAnalysis.observables.f_xi} | ρ{'>'}ρc*:{stats.lastAnalysis.observables.phaseTransitions} | ρ{'>'}ρc**:{stats.lastAnalysis.observables.criticalEvents}
+            </div>
+          )}
           {stats.lastAnalysis.topTags && (
             <div style={{ fontSize:10, color:'#7ae6d6', marginBottom:4 }}>
               Top tags: {stats.lastAnalysis.topTags.map(([tag, count]) => `${tag}(${count})`).join(', ')}
@@ -1856,7 +2308,7 @@ const TheCrucible = () => {
 
       {/* ─── FOOTER ─── */}
       <div style={{ padding:'6px 10px 12px', fontSize:8, color:'#1a1810', textAlign:'center', borderTop:'1px solid #111' }}>
-        Beacon Glyph Engine v5 × Philosopher's Stone v2 × EchoSeed v4.2 — The Crucible v3 · Full Fusion
+        Beacon Glyph Engine v5 × Philosopher's Stone v2 × EchoSeed v4.2 — The Crucible v3 · Full Fusion + Physics Lexicon
       </div>
       <div style={{ height: 200 }} />
     </div>
